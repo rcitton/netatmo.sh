@@ -6,7 +6,7 @@ A Linux Shell / Bash script for querying the data of your Netatmo weather statio
 
 	netatmo.sh -h
 
-	netatmo.sh [-u <user>] [-p <pass>] [-i <client-id>] [-s client-secret] -D
+	netatmo.sh [-u <user>] [-p <pass>] [-ci <client-id>] [-cs client-secret] -D
 
 	netatmo.sh [OPTIONS]
 
@@ -23,11 +23,11 @@ A guest user is sufficient.
 <b>-p [password]</b><br>
 Passwordassword to use (default is set in the configuration area of this script)
 
-<b>-i [client-id]</b><br>
-Client-ID (default is set in the configuration area of this script).
+<b>-ci [client-id]</b><br>
+Application Client-ID (default is set in the configuration area of this script), see https://dev.netatmo.com/apps/createanapp#form
 
-<b>-s [client-secret]</b><br>
-Client-Secret (default is set in the configuration area of this script)
+<b>-cs [client-secret]</b><br>
+Application Client-Secret (default is set in the configuration area of this script), see https://dev.netatmo.com/apps/createanapp#form
 
 <b>-D</b><br>
 Don't fetch data, but get device info and current readings.
