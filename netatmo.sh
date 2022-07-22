@@ -4,7 +4,7 @@
 # CONFIGURATION SECTION #
 # ####################################### #
 
-# Default NetAtmo credentials (a guest user is sufficient)
+# Default NetAtmo credentials
 # can be overwritten using -u and -p
 user="my.mailaddress@mailprovider.com"
 pass="my secret password"
@@ -13,6 +13,7 @@ client_secret="Application client secret ID"
 
 # ID of the main station
 master="aa:bb:cc:dd:ee:ff"
+master="70:ee:50:19:32:50"
 
 # available modules and their sensors
 sensors_config=(
@@ -301,7 +302,7 @@ getmeasurecsv() {
     PARAM="access_token=$ACCESS_TOKEN"
 
     # now download data as csv
-    retrieved_data=$(curl -d $PARAM $API_GETMEASURECSV)
+    retrieved_data=$(curl --silent -d $PARAM $API_GETMEASURECSV)
     if [ $? -eq 0 ];then
         echo "${retrieved_data}"
     fi
