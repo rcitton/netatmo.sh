@@ -8,6 +8,8 @@
 # can be overwritten using -u and -p
 user="my.mailaddress@mailprovider.com"
 pass="my secret password"
+client_id="Application client ID"
+client_secret="Application client secret ID"
 
 # ID of the main station
 master="aa:bb:cc:dd:ee:ff"
@@ -49,16 +51,15 @@ cat <<END_OF_HELP
 
 Usage: $(basename $0) -h
 
-       $(basename $0) [-u <user>] [-p <pass>] -D
+       $(basename $0) [-u <user>] [-p <pass>] [-ci <client-id>] [-cs client-secret] -D
 
        $(basename $0) [OPTIONS]
 
 Thsi scripts downloads data from the NetAtmo website.
 
-You should first edit the configuration section of this script (the first 40
-lines), add a valid user and password if you don't want to use the -u and -p
-parameter with each call. A guest user, not able to change the configuration
-at the WebAtmo site, is sufficient.
+You should first edit the configuration section of this script (the first 41
+lines), add a valid user and password if you don't want to use the -u, -p, and
+-ci and -cs parameters with each call.
 
 Then fetch the device information using -D.
 
@@ -73,10 +74,14 @@ General options
  -u <username>
      User to use (default is set in the configuration area of this script)
 
-     A guest user is sufficient.
-
  -p <password>
      Password to use (default is set in the configuration area of this script)
+
+ -ci [client-id]
+     Application Client-ID (default is set in the configuration area of this script).
+
+ -cs [client-secret]
+     Application Client-Secret (default is set in the configuration area of this script)
 
  -D  Don't fetch data, but get device info and current readings.
      If jq is available, it's used to format and pretty-print the output.
@@ -242,9 +247,10 @@ getmeasurecsv() {
     # ------------------------------------------------------
     # Help
     # ------------------------------------------------------
-    # usage: getmeasurecsv <USER> <PASSWORD> <DEVICE_ID> <MODULE_ID> <TYPE> <STARTDATE> <ENDDATE> <FORMAT>
+    # usage: getmeasurecsv <USER> <PASSWORD> <CLIENT_ID> <CLIENT_SECRET> <DEVICE_ID> <MODULE_ID> <TYPE> <STARTDATE> <ENDDATE> <FORMAT>
     #
     # USER + PASSWORD -> your NetAtmo Website login
+    # CLIENT_ID + CLIENT_SECRET -> your NetAtmo Application client ID/secret https://dev.netatmo.com/apps/createanapp#form
     # DEVICE_ID -> Base Station ID
     # MODULE_ID -> Module ID
     # TYPE -> Comma-separated list of sensors (Temperature,Humidity,etc.)
@@ -257,7 +263,9 @@ getmeasurecsv() {
     # ------------------------------------------------------
     USER=$1
     PASS=$2
- 
+    CLIENT_ID=$3
+    CLIENT_SECRET=$4
+
     DEVICE_ID=$3
     MODULE_ID=$4
     TYPE=$5
@@ -272,8 +280,7 @@ getmeasurecsv() {
     URL_POSTLOGIN="https://auth.netatmo.com/access/postlogin"
     API_GETMEASURECSV="https://api.netatmo.com/api/getmeasurecsv"
     SESSION_COOKIE="cookie_sess.txt"
- 
- 
+
     # ------------------------------------------------------
     # Convert start and end date to timestamp
     # ------------------------------------------------------
@@ -283,8 +290,7 @@ getmeasurecsv() {
     DATEEND="$(date --date="$DATETIMEEND" "+%d.%m.%Y")"
     TIMEEND="$(date --date="$DATETIMEEND" "+%H:%M")"
     DATE_END="$(date --date="$DATETIMEEND" "+%s")"
- 
- 
+
     # ------------------------------------------------------
     # URL encode the user entered parameters
     # ------------------------------------------------------
@@ -298,112 +304,69 @@ getmeasurecsv() {
     DATEEND="$(urlencode $DATEEND)"
     TIMEEND="$(urlencode $TIMEEND)"
     FORMAT="$(urlencode $FORMAT)"
- 
- 
+
     # ------------------------------------------------------
     # Now let's fetch the data
     # ------------------------------------------------------
- 
-
-    # get token from hidden <input> field
-    TOKEN="$(curl --silent -c $SESSION_COOKIE $URL_LOGIN | sed -n '/token/s/.*name="_token"\s\+value="\([^"]\+\).*/\1/p')"
-
-    # and now we can login using cookie, id, user and password
-    curl --silent -d "_token=$TOKEN&email=$USER&password=$PASS" -b $SESSION_COOKIE -c $SESSION_COOKIE $URL_POSTLOGIN > /dev/null
-
     # next we extract the access_token from the session cookie
-    ACCESS_TOKEN="$(cat $SESSION_COOKIE | grep netatmocomaccess_token | cut -f7)"
- 
+    ACCESS_TOKEN=`curl --silent  --location --request POST "https://api.netatmo.com/oauth2/token" \
+                       --form "grant_type=password" \
+                       --form "client_id=${CLIENT_ID}" \
+                       --form "client_secret=${CLIENT_SECRET}" \
+                       --form "username=${USER}" \
+                       --form "password=${PASS}" | jq -r '.access_token'`
+
     # build the POST data
-    PARAM="access_token=$ACCESS_TOKEN&device_id=$DEVICE_ID&type=$TYPE&module_id=$MODULE_ID&scale=max&format=$FORMAT&datebegin=$DATEBEGIN&timebegin=$TIMEBEGIN&dateend=$DATEEND&timeend=$TIMEEND&date_begin=$DATE_BEGIN&date_end=$DATE_END"
- 
+    PARAM="access_token=$ACCESS_TOKEN"
+
     # now download data as csv
     retrieved_data=$(curl -d $PARAM $API_GETMEASURECSV)
     if [ $? -eq 0 ];then
         echo "${retrieved_data}"
     fi
- 
-    # clean up
-    rm $SESSION_COOKIE
 }
 
 #------------------------------------------------------------------------------
 listDevices() {
-
-    # shameless stolen from Michael Miklis, 
-    # https://www.michaelmiklis.de/read-netatmo-weather-station-data-via-script/
-    
     # ------------------------------------------------------
     # Help
     # ------------------------------------------------------
-    # usage: listdevices <USER> <PASSWORD>
+    # usage: listdevices <USER> <PASSWORD> <CLIENT-ID> <CLIENT-SECRET>
     #
     # USER + PASSWORD -> your NetAtmo Website login
+    # CLIENT_ID + CLIENT_SECRET -> your NetAtmo Application client ID/secret https://dev.netatmo.com/apps/createanapp#form
  
     # ------------------------------------------------------
     # Parsing Arguments
     # ------------------------------------------------------
     USER=$1
     PASS=$2
- 
+    CLIENT_ID=$3
+    CLIENT_SECRET=$4
  
     # ------------------------------------------------------
     # Define some constants
     # ------------------------------------------------------
     URL_LOGIN="https://auth.netatmo.com/en-us/access/login"
     URL_POSTLOGIN="https://auth.netatmo.com/access/postlogin"
-    API_GETMEASURECSV="https://api.netatmo.com/api/devicelist"
-    SESSION_COOKIE="cookie_sess.txt"
- 
- 
-    # ------------------------------------------------------
-    # URL encode the user entered parameters
-    # ------------------------------------------------------
-    USER="$(urlencode $USER)"
-    PASS="$(urlencode $PASS)"
- 
- 
+    API_GETMEASURECSV="https://api.netatmo.com/api/getstationsdata"
+
     # ------------------------------------------------------
     # Now let's fetch the data
     # ------------------------------------------------------
-
-    # get token from hidden <input> field
-    TOKEN="$(curl --silent -c $SESSION_COOKIE $URL_LOGIN | sed -n '/token/s/.*name="_token"\s\+value="\([^"]\+\).*/\1/p')"
-
-    # and now we can login using cookie, id, user and password
-    curl --silent -d "_token=$TOKEN&email=$USER&password=$PASS" -b $SESSION_COOKIE -c $SESSION_COOKIE $URL_POSTLOGIN > /dev/null
-
     # next we extract the access_token from the session cookie
-    ACCESS_TOKEN="$(cat $SESSION_COOKIE | grep netatmocomaccess_token | cut -f7)"
- 
+    ACCESS_TOKEN=`curl --silent  --location --request POST "https://api.netatmo.com/oauth2/token" \
+                       --form "grant_type=password" \
+                       --form "client_id=${CLIENT_ID}" \
+                       --form "client_secret=${CLIENT_SECRET}" \
+                       --form "username=${USER}" \
+                       --form "password=${PASS}" | jq -r '.access_token'`
+
     # build the POST data
     PARAM="access_token=$ACCESS_TOKEN"
  
     # now download json data
-    curl -d $PARAM $API_GETMEASURECSV
- 
-    # clean up
-    rm $SESSION_COOKIE
-}
-
-#------------------------------------------------------------------------------
-urlencode() {
-    # ------------------------------------------------------
-    # urlencode function from mrubin
-    # https://gist.github.com/mrubin
-    #
-    # usage: urlencode <string>
-    # ------------------------------------------------------
-    local length="${#1}"
- 
-    for (( i = 0; i < length; i++ )); do
-        local c="${1:i:1}"
- 
-        case $c in [a-zA-Z0-9.~_-])
-            printf "$c" ;;
-            *) printf '%%%02X' "'$c"
-            esac
-    done
+    curl --silent -d $PARAM $API_GETMEASURECSV
 }
 
 #------------------------------------------------------------------------------
@@ -422,7 +385,7 @@ id_in_filename=0
 file_type="csv"
 filename_mode='NORMAL'
 OPTIND=1
-while getopts "d:De:iLM:n:o:p:s:tTu:xy?h" opt; do
+while getopts "ci:cs:d:De:iLM:n:o:p:s:tTu:xy?h" opt; do
     case "$opt" in
     d)  # date selection: specified day
         start_time="${OPTARG} 00:00:00"
@@ -433,14 +396,20 @@ while getopts "d:De:iLM:n:o:p:s:tTu:xy?h" opt; do
         end_time_minus_one=$(expr ${end_time_in_seconds} - 1 )
         end_time=$(date -d @${end_time_minus_one} '+%Y-%m-%d %H:%M:%S')
         filename_mode='DAY'
-	min_file_size=10000
+        min_file_size=10000
+        ;;
+    ci) # NetAtmo Application Client ID
+        client_id=${OPTARG}
+        ;;
+    cs) # NetAtmo Application Client Secret
+        client_secret=${OPTARG}
         ;;
     D)  # get device list/current readings, no historical data
         list_devices=1
         ;;
     e)  # date selection: end date/time
         end_time=${OPTARG} 
-	min_file_size=140
+        min_file_size=140
         ;;
     i)  # use module ID instead of name in outfile name
         if [ "${module_in_filename}" == 'id' ] ; then
@@ -456,7 +425,7 @@ while getopts "d:De:iLM:n:o:p:s:tTu:xy?h" opt; do
         end_time_minus_one=$(expr ${end_time_in_seconds} - 1 )
         end_time=$(date -d @${end_time_minus_one} '+%Y-%m-%d %H:%M:%S')
         filename_mode='MONTH'
-	min_file_size=300000
+        min_file_size=300000
         ;;
     M)  # date selection: specified month
         start_time="${OPTARG}-01 00:00:00"
@@ -467,13 +436,13 @@ while getopts "d:De:iLM:n:o:p:s:tTu:xy?h" opt; do
         end_time_minus_one=$(expr ${end_time_in_seconds} - 1 )
         end_time=$(date -d @${end_time_minus_one} '+%Y-%m-%d %H:%M:%S')
         filename_mode='MONTH'
-	min_file_size=300000
+        min_file_size=300000
         ;;
     n)  # retrieve data for the last X seconds
         period=${OPTARG}
         past=$(expr ${now} - ${period} )
         start_time=$(date -d @${past} '+%Y-%m-%d %H:%M:%S')
-	min_file_size=140
+        min_file_size=140
         ;;
     o)  # output directory
         outdirectory=${OPTARG} 
@@ -483,19 +452,19 @@ while getopts "d:De:iLM:n:o:p:s:tTu:xy?h" opt; do
         ;;
     s)    # date selection: start date/time
         start_time=${OPTARG}
-	min_file_size=140
+        min_file_size=140
         ;;
     t)  # date selection: today
         start_time=$(date '+%Y-%m-%d 00:00:00')
         end_time=$(date -d @${now}    '+%Y-%m-%d %H:%M:%S')
         filename_mode='PARTIALLY_DAY'
-	min_file_size=140
+        min_file_size=140
         ;;
     T)  # date selection: this month
         start_time=$(date -d 'this month' '+%Y-%m-01 00:00:00')
         end_time=$(date -d @${now}    '+%Y-%m-%d %H:%M:%S')
         filename_mode='PARTIALLY_MONTH'
-	min_file_size=140
+        min_file_size=140
         ;;
     u)  # NetAtmo user credentials: Username
         user=${OPTARG}
@@ -513,7 +482,7 @@ while getopts "d:De:iLM:n:o:p:s:tTu:xy?h" opt; do
         end_minus_24_hours=$(expr ${end_in_seconds_since_epoche} - 86400)
         start_time=$(date -d @${end_minus_24_hours} '+%Y-%m-%d 00:00:00')
         filename_mode='DAY'
-	min_file_size=10000
+        min_file_size=10000
         ;;
     h|\?) # help
         usage
@@ -589,15 +558,17 @@ for sensorline in "${sensors_config[@]}"; do
         do
 
 	        # download
-                getmeasurecsv        \
-                    "${user}"        \
-                    "${pass}"        \
-                    "${master}"      \
-                    "${sensor_id}"   \
-                    "${sensor}"      \
-                    "${start_time}"  \
-                    "${end_time}"    \
-                    "${file_type}"   \
+                getmeasurecsv          \
+                    "${user}"          \
+                    "${pass}"          \
+                    "${client_it}"     \
+                    "${client_secret}" \
+                    "${master}"        \
+                    "${sensor_id}"     \
+                    "${sensor}"        \
+                    "${start_time}"    \
+                    "${end_time}"      \
+                    "${file_type}"     \
                     > "${outfilename}"
 
                 # check file size

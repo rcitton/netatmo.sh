@@ -4,9 +4,10 @@ getmeasurecsv() {
     # ------------------------------------------------------
     # Help
     # ------------------------------------------------------
-    # usage: getmeasurecsv <USER> <PASSWORD> <DEVICE_ID> <MODULE_ID> <TYPE> <STARTDATE> <ENDDATE> <FORMAT>
+    # usage: getmeasurecsv <USER> <PASSWORD> <CLIENT_ID> <CLIENT_SECRET> <DEVICE_ID> <MODULE_ID> <TYPE> <STARTDATE> <ENDDATE> <FORMAT>
     #
     # USER + PASSWORD -> your NetAtmo Website login
+    # CLIENT_ID + CLIENT_SECRET -> your NetAtmo Application client ID/secret https://dev.netatmo.com/apps/createanapp#form
     # DEVICE_ID -> Base Station ID
     # MODULE_ID -> Module ID
     # TYPE -> Comma-separated list of sensors (Temperature,Humidity,etc.)
@@ -19,7 +20,9 @@ getmeasurecsv() {
     # ------------------------------------------------------
     USER=$1
     PASS=$2
- 
+    CLIENT_ID=$3
+    CLIENT_SECRET=$4
+
     DEVICE_ID=$3
     MODULE_ID=$4
     TYPE=$5
@@ -33,9 +36,7 @@ getmeasurecsv() {
     URL_LOGIN="https://auth.netatmo.com/en-us/access/login"
     URL_POSTLOGIN="https://auth.netatmo.com/access/postlogin"
     API_GETMEASURECSV="https://api.netatmo.com/api/getmeasurecsv"
-    SESSION_COOKIE="cookie_sess.txt"
- 
- 
+
     # ------------------------------------------------------
     # Convert start and end date to timestamp
     # ------------------------------------------------------
@@ -65,47 +66,23 @@ getmeasurecsv() {
     # ------------------------------------------------------
     # Now let's fetch the data
     # ------------------------------------------------------
- 
-    # get token from hidden <input> field
-    TOKEN="$(curl --silent -c $SESSION_COOKIE $URL_LOGIN | sed -n '/token/s/.*name="_token"\s\+value="\([^"]\+\).*/\1/p')"
-
-    # and now we can login using cookie, id, user and password
-    curl --silent -d "_token=$TOKEN&email=$USER&password=$PASS" -b $SESSION_COOKIE -c $SESSION_COOKIE $URL_POSTLOGIN > /dev/null
-
     # next we extract the access_token from the session cookie
-    ACCESS_TOKEN="$(cat $SESSION_COOKIE | grep netatmocomaccess_token | cut -f7)"
- 
+    ACCESS_TOKEN=`curl --silent  --location --request POST "https://api.netatmo.com/oauth2/token" \
+                       --form "grant_type=password" \
+                       --form "client_id=${CLIENT_ID}" \
+                       --form "client_secret=${CLIENT_SECRET}" \
+                       --form "username=${USER}" \
+                       --form "password=${PASS}" | jq -r '.access_token'`
+
     # build the POST data
-    PARAM="access_token=$ACCESS_TOKEN&device_id=$DEVICE_ID&type=$TYPE&module_id=$MODULE_ID&scale=max&format=$FORMAT&datebegin=$DATEBEGIN&timebegin=$TIMEBEGIN&dateend=$DATEEND&timeend=$TIMEEND&date_begin=$DATE_BEGIN&date_end=$DATE_END"
- 
+    PARAM="access_token=$ACCESS_TOKEN"
+
     # now download data as csv
     curl -d $PARAM $API_GETMEASURECSV
  
     # clean up
     rm $SESSION_COOKIE
 }
- 
 #____________________________________________________________________________________________________________________________________
  
-urlencode() {
-    # ------------------------------------------------------
-    # urlencode function from mrubin
-    # https://gist.github.com/mrubin
-    #
-    # usage: urlencode <string>
-    # ------------------------------------------------------
-    local length="${#1}"
- 
-    for (( i = 0; i < length; i++ )); do
-        local c="${1:i:1}"
- 
-        case $c in [a-zA-Z0-9.~_-])
-            printf "$c" ;;
-            *) printf '%%%02X' "'$c"
-            esac
-    done
-}
- 
-#____________________________________________________________________________________________________________________________________
- 
-getmeasurecsv "user@email.com" "mySecretPassword" "12:23:45:56:78:33" "02:00:00:12:23:45" "Temperature,Humidity" "2015-05-17 10:00:00" "2015-05-18 12:00:00" "csv"
+getmeasurecsv "user@email.com" "mySecretPassword" "54d96a28a47b05254231hdrw" "nRQS3Jrps7x612OPDcWuIN854z2Rg" "12:23:45:56:78:33" "02:00:00:12:23:45" "Temperature,Humidity" "2015-05-17 10:00:00" "2015-05-18 12:00:00" "csv"
