@@ -51,7 +51,7 @@ cat <<END_OF_HELP
 
 Usage: $(basename $0) -h
 
-       $(basename $0) [-u <user>] [-p <pass>] [-ci <client-id>] [-cs client-secret] -D
+       $(basename $0) [-u <user>] [-p <pass>] [-c <client-id>] [-j client-secret] -D
 
        $(basename $0) [OPTIONS]
 
@@ -77,10 +77,10 @@ General options
  -p <password>
      Password to use (default is set in the configuration area of this script)
 
- -ci [client-id]
+ -c [client-id]
      Application Client-ID (default is set in the configuration area of this script).
 
- -cs [client-secret]
+ -j [client-secret]
      Application Client-Secret (default is set in the configuration area of this script)
 
  -D  Don't fetch data, but get device info and current readings.
@@ -320,11 +320,11 @@ listDevices() {
     # ------------------------------------------------------
     # Parsing Arguments
     # ------------------------------------------------------
-    USER=$1
-    PASS=$2
-    CLIENT_ID=$3
-    CLIENT_SECRET=$4
- 
+    USER=${1}
+    PASS=${2}
+    CLIENT_ID=${3}
+    CLIENT_SECRET=${4}
+
     # ------------------------------------------------------
     # Define some constants
     # ------------------------------------------------------
@@ -344,7 +344,7 @@ listDevices() {
 
     # build the POST data
     PARAM="access_token=$ACCESS_TOKEN"
- 
+
     # now download json data
     curl --silent -d $PARAM $API_GETMEASURECSV
 }
@@ -364,7 +364,7 @@ id_in_filename=0
 file_type="csv"
 filename_mode='NORMAL'
 OPTIND=1
-while getopts "ci:cs:d:De:iLM:n:o:p:s:tTu:xy?h" opt; do
+while getopts "c:j:d:De:iLM:n:o:p:s:tTu:xy?h" opt; do
     case "$opt" in
     d)  # date selection: specified day
         start_time="${OPTARG} 00:00:00"
@@ -377,10 +377,10 @@ while getopts "ci:cs:d:De:iLM:n:o:p:s:tTu:xy?h" opt; do
         filename_mode='DAY'
         min_file_size=10000
         ;;
-    ci) # NetAtmo Application Client ID
+    c) # NetAtmo Application Client ID
         client_id=${OPTARG}
         ;;
-    cs) # NetAtmo Application Client Secret
+    j) # NetAtmo Application Client Secret
         client_secret=${OPTARG}
         ;;
     D)  # get device list/current readings, no historical data
@@ -540,7 +540,7 @@ for sensorline in "${sensors_config[@]}"; do
                 getmeasurecsv          \
                     "${user}"          \
                     "${pass}"          \
-                    "${client_it}"     \
+                    "${client_id}"     \
                     "${client_secret}" \
                     "${master}"        \
                     "${sensor_id}"     \
