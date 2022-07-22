@@ -67,5 +67,4 @@ getmeasurecsv() {
 }
 #____________________________________________________________________________________________________________________________________
  
-#getmeasurecsv "user@email.com" "mySecretPassword" "54d96a28a47b05254231hdrw" "nRQS3Jrps7x612OPDcWuIN854z2Rg" "12:23:45:56:78:33" "02:00:00:12:23:45" "Temperature,Humidity" "2015-05-17 10:00:00" "2015-05-18 12:00:00" "csv"
-getmeasurecsv "rcitton@gmail.com" "Iceland#1" "62d96a28a47c06254231aedd" "mSQS3Jrps7x612OPDcWuIN558z3Rg" "70:ee:50:84:03:e4" "02:00:00:83:d2:06" "Temperature,Humidity" "2022-05-17 10:00:00" "2022-05-18 12:00:00" "csv"
+getmeasurecsv "user@email.com" "mySecretPassword" "54d96a28a47b05254231hdrw" "nRQS3Jrps7x612OPDcWuIN854z2Rg" "12:23:45:56:78:33" "02:00:00:12:23:45" "Temperature,Humidity" "2015-05-17 10:00:00" "2015-05-18 12:00:00" "csv"
