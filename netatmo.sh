@@ -272,9 +272,8 @@ getmeasurecsv() {
     # ------------------------------------------------------
     # Define some constants
     # ------------------------------------------------------
-    URL_LOGIN="https://auth.netatmo.com/en-us/access/login"
-    URL_POSTLOGIN="https://auth.netatmo.com/access/postlogin"
-    API_GETMEASURECSV="https://api.netatmo.com/api/getmeasurecsv"
+    URL_OAUTH2="https://api.netatmo.com/oauth2/token"
+    API_GETMEASURECSV="https://api.netatmo.com/api/getstationsdata"
 
     # ------------------------------------------------------
     # Convert start and end date to timestamp
@@ -290,7 +289,7 @@ getmeasurecsv() {
     # Now let's fetch the data
     # ------------------------------------------------------
     # next we extract the access_token from the session cookie
-    ACCESS_TOKEN=`curl --silent  --location --request POST "https://api.netatmo.com/oauth2/token" \
+    ACCESS_TOKEN=`curl --silent  --location --request POST ${URL_OAUTH2} \
                        --form "grant_type=password" \
                        --form "client_id=${CLIENT_ID}" \
                        --form "client_secret=${CLIENT_SECRET}" \
