@@ -240,10 +240,6 @@ END_OF_HELP
 
 #------------------------------------------------------------------------------
 getmeasurecsv() {
-
-    # shameless stolen from Michael Miklis, 
-    # https://www.michaelmiklis.de/export-netatmo-weather-station-data-to-csv-excel/
-    
     # ------------------------------------------------------
     # Help
     # ------------------------------------------------------
@@ -261,17 +257,17 @@ getmeasurecsv() {
     # ------------------------------------------------------
     # Parsing Arguments
     # ------------------------------------------------------
-    USER=$1
-    PASS=$2
-    CLIENT_ID=$3
-    CLIENT_SECRET=$4
+    USER=${1}
+    PASS=${2}
+    CLIENT_ID=${3}
+    CLIENT_SECRET=${4}
 
-    DEVICE_ID=$3
-    MODULE_ID=$4
-    TYPE=$5
-    DATETIMEBEGIN=$6
-    DATETIMEEND=$7
-    FORMAT=$8
+    DEVICE_ID=${5}
+    MODULE_ID=${6}
+    TYPE=${7}
+    DATETIMEBEGIN=${8}
+    DATETIMEEND=${9}
+    FORMAT=${10}
  
     # ------------------------------------------------------
     # Define some constants
@@ -279,7 +275,6 @@ getmeasurecsv() {
     URL_LOGIN="https://auth.netatmo.com/en-us/access/login"
     URL_POSTLOGIN="https://auth.netatmo.com/access/postlogin"
     API_GETMEASURECSV="https://api.netatmo.com/api/getmeasurecsv"
-    SESSION_COOKIE="cookie_sess.txt"
 
     # ------------------------------------------------------
     # Convert start and end date to timestamp
@@ -290,20 +285,6 @@ getmeasurecsv() {
     DATEEND="$(date --date="$DATETIMEEND" "+%d.%m.%Y")"
     TIMEEND="$(date --date="$DATETIMEEND" "+%H:%M")"
     DATE_END="$(date --date="$DATETIMEEND" "+%s")"
-
-    # ------------------------------------------------------
-    # URL encode the user entered parameters
-    # ------------------------------------------------------
-    USER="$(urlencode $USER)"
-    PASS="$(urlencode $PASS)"
-    DEVICE_ID="$(urlencode $DEVICE_ID)"
-    MODULE_ID="$(urlencode $MODULE_ID)"
-    TYPE="$(urlencode $TYPE)"
-    DATEBEGIN="$(urlencode $DATEBEGIN)"
-    TIMEBEGIN="$(urlencode $TIMEBEGIN)"
-    DATEEND="$(urlencode $DATEEND)"
-    TIMEEND="$(urlencode $TIMEEND)"
-    FORMAT="$(urlencode $FORMAT)"
 
     # ------------------------------------------------------
     # Now let's fetch the data
@@ -343,7 +324,7 @@ listDevices() {
     PASS=$2
     CLIENT_ID=$3
     CLIENT_SECRET=$4
- 
+
     # ------------------------------------------------------
     # Define some constants
     # ------------------------------------------------------
@@ -366,9 +347,9 @@ listDevices() {
     PARAM="access_token=$ACCESS_TOKEN"
  
     # now download json data
+    echo "curl --silent -d $PARAM $API_GETMEASURECSV"
     curl --silent -d $PARAM $API_GETMEASURECSV
 }
-
 #------------------------------------------------------------------------------
 # main
 #------------------------------------------------------------------------------
@@ -497,9 +478,9 @@ shift $((OPTIND-1))
 # device list requested
 if [ "${list_devices}" == "1" ] ; then
     if hash jq >/dev/null 2>&1 ; then
-        listDevices "${user}" "${pass}" | jq '.'
+        listDevices "${user}" "${pass}" "${client_id}" "${client_secret}" | jq '.'
     else
-        listDevices "${user}" "${pass}"
+        listDevices "${user}" "${pass}" "${client_id}" "${client_secret}"
     fi
     exit 0
 fi

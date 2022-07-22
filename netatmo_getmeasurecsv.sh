@@ -18,17 +18,17 @@ getmeasurecsv() {
     # ------------------------------------------------------
     # Parsing Arguments
     # ------------------------------------------------------
-    USER=$1
-    PASS=$2
-    CLIENT_ID=$3
-    CLIENT_SECRET=$4
+    USER=${1}
+    PASS=${2}
+    CLIENT_ID=${3}
+    CLIENT_SECRET=${4}
 
-    DEVICE_ID=$3
-    MODULE_ID=$4
-    TYPE=$5
-    DATETIMEBEGIN=$6
-    DATETIMEEND=$7
-    FORMAT=$8
+    DEVICE_ID=${5}
+    MODULE_ID=${6}
+    TYPE=${7}
+    DATETIMEBEGIN=${8}
+    DATETIMEEND=${9}
+    FORMAT=${10}
  
     # ------------------------------------------------------
     # Define some constants
@@ -46,23 +46,7 @@ getmeasurecsv() {
     DATEEND="$(date --date="$DATETIMEEND" "+%d.%m.%Y")"
     TIMEEND="$(date --date="$DATETIMEEND" "+%H:%M")"
     DATE_END="$(date --date="$DATETIMEEND" "+%s")"
- 
- 
-    # ------------------------------------------------------
-    # URL encode the user entered parameters
-    # ------------------------------------------------------
-    USER="$(urlencode $USER)"
-    PASS="$(urlencode $PASS)"
-    DEVICE_ID="$(urlencode $DEVICE_ID)"
-    MODULE_ID="$(urlencode $MODULE_ID)"
-    TYPE="$(urlencode $TYPE)"
-    DATEBEGIN="$(urlencode $DATEBEGIN)"
-    TIMEBEGIN="$(urlencode $TIMEBEGIN)"
-    DATEEND="$(urlencode $DATEEND)"
-    TIMEEND="$(urlencode $TIMEEND)"
-    FORMAT="$(urlencode $FORMAT)"
- 
- 
+
     # ------------------------------------------------------
     # Now let's fetch the data
     # ------------------------------------------------------
@@ -75,14 +59,13 @@ getmeasurecsv() {
                        --form "password=${PASS}" | jq -r '.access_token'`
 
     # build the POST data
-    PARAM="access_token=$ACCESS_TOKEN"
+    PARAM="access_token=$ACCESS_TOKEN&device_id=$DEVICE_ID&type=$TYPE&module_id=$MODULE_ID&scale=max&format=$FORMAT&datebegin=$DATEBEGIN&timebegin=$TIMEBEGIN&dateend=$DATEEND&timeend=$TIMEEND&date_begin=$DATE_BEGIN&date_end=$DATE_END"
 
     # now download data as csv
+    echo "-d $PARAM $API_GETMEASURECSV"
     curl -d $PARAM $API_GETMEASURECSV
- 
-    # clean up
-    rm $SESSION_COOKIE
 }
 #____________________________________________________________________________________________________________________________________
  
-getmeasurecsv "user@email.com" "mySecretPassword" "54d96a28a47b05254231hdrw" "nRQS3Jrps7x612OPDcWuIN854z2Rg" "12:23:45:56:78:33" "02:00:00:12:23:45" "Temperature,Humidity" "2015-05-17 10:00:00" "2015-05-18 12:00:00" "csv"
+#getmeasurecsv "user@email.com" "mySecretPassword" "54d96a28a47b05254231hdrw" "nRQS3Jrps7x612OPDcWuIN854z2Rg" "12:23:45:56:78:33" "02:00:00:12:23:45" "Temperature,Humidity" "2015-05-17 10:00:00" "2015-05-18 12:00:00" "csv"
+getmeasurecsv "rcitton@gmail.com" "Iceland#1" "62d96a28a47c06254231aedd" "mSQS3Jrps7x612OPDcWuIN558z3Rg" "70:ee:50:84:03:e4" "02:00:00:83:d2:06" "Temperature,Humidity" "2022-05-17 10:00:00" "2022-05-18 12:00:00" "csv"
