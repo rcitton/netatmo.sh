@@ -62,7 +62,6 @@ getmeasurecsv() {
     PARAM="access_token=$ACCESS_TOKEN&device_id=$DEVICE_ID&type=$TYPE&module_id=$MODULE_ID&scale=max&format=$FORMAT&datebegin=$DATEBEGIN&timebegin=$TIMEBEGIN&dateend=$DATEEND&timeend=$TIMEEND&date_begin=$DATE_BEGIN&date_end=$DATE_END"
 
     # now download data as csv
-    echo "-d $PARAM $API_GETMEASURECSV"
     curl -d $PARAM $API_GETMEASURECSV
 }
 #____________________________________________________________________________________________________________________________________
