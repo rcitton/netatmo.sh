@@ -13,7 +13,6 @@ client_secret="Application client secret ID"
 
 # ID of the main station
 master="aa:bb:cc:dd:ee:ff"
-master="70:ee:50:19:32:50"
 
 # available modules and their sensors
 sensors_config=(
